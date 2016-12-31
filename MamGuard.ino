@@ -4,6 +4,10 @@
 #include <OLED_I2C.h>
 #include <MQ135.h>
 
+extern uint8_t MediumNumbers[];
+extern uint8_t SmallFont[];
+
+namespace {
 const uint8_t HDS10_PIN = A2;
 const uint8_t MQ135_PIN = A3;
 
@@ -28,82 +32,90 @@ const uint8_t FIRST_LINE = 16;
 const uint8_t SECOND_LINE = 40;
 
 
-OLED  myOLED(SCREEN_SDA_PIN, SCREEN_SCL_PIN);
-DHT_Unified dht(DHT_PIN, DHT_TYPE);
-MQ135 mq135(MQ135_PIN);
+const OLED  my_oled(SCREEN_SDA_PIN, SCREEN_SCL_PIN);
+const DHT_Unified dht(DHT_PIN, DHT_TYPE);
+const MQ135 mq135(MQ135_PIN);
 
 bool is_warning = false;
-uint32_t mq135_sensorValue = 0;
-uint32_t hds10_sensorValue = 0;
-uint32_t dht_temperature_sensorValue = 0;
-uint32_t dht_humidity_sensorValue = 0;
+float mq135_resistance_value = 0;
 
-extern uint8_t MediumNumbers[];
-extern uint8_t SmallFont[];
+float mq135_co = 0.0;
+float mq135_co2 = 0.0;
+float mq135_ethanol = 0.0;
+float mq135_nh4 = 0.0;
+float mq135_toluene = 0.0;
+float mq135_acetone = 0.0;
 
+uint32_t hds10_sensor_value = 0;
 
-void draw_borders()
-{
-  myOLED.drawRoundRect(0, SCREEN_YELOW_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
-  
-  // Vertical line in center
-  myOLED.drawLine(0, SCREEN_YELOW_HEIGHT + SCREEN_BLUE_HALF_HEIGHT, SCREEN_WIDTH, SCREEN_YELOW_HEIGHT + SCREEN_BLUE_HALF_HEIGHT);
-
-  // Horizontal line in center
-  myOLED.drawLine(SCREEN_HALF_WIDTH, SCREEN_YELOW_HEIGHT, SCREEN_HALF_WIDTH, SCREEN_HEIGHT);
-}
+uint32_t dht_temperature_sensor_value = 0;
+uint32_t dht_humidity_sensor_value = 0;
 
 void draw_warning()
 {
-  myOLED.print("!!! < WARNNING > !!!", CENTER, MARGINE);
+  my_oled.print("!!! < WARNNING > !!!", CENTER, MARGINE);
 
-  myOLED.drawRoundRect(0,0, SCREEN_WIDTH -1, SCREEN_YELOW_HEIGHT - 1);
+  my_oled.drawRoundRect(0, 0, SCREEN_WIDTH - 1, SCREEN_YELOW_HEIGHT - 1);
 }
 
 void read_data_from_sensor()
 {
-  mq135_sensorValue = analogRead(MQ135_PIN);
-  hds10_sensorValue = analogRead(HDS10_PIN);
+  mq135_resistance_value = mq135.getResistance();
+
+  mq135_co = mq135.getCO(mq135_resistance_value);//co ppm
+  mq135_co2 = mq135.getCO2(mq135_resistance_value);//co2 ppm
+  mq135_ethanol = mq135.getEthanol(mq135_resistance_value);//ethanol ppm
+  mq135_nh4 = mq135.getNH4(mq135_resistance_value); //NH4 ppm
+  mq135_toluene = mq135.getToluene(mq135_resistance_value); //toluene ppm
+  mq135_acetone = mq135.getAcetone(mq135_resistance_value); //acetone ppm
+
+  hds10_sensor_value = analogRead(HDS10_PIN);
 
   sensors_event_t event;
   dht.temperature().getEvent(&event);
 
-  dht_temperature_sensorValue = event.temperature;
+  dht_temperature_sensor_value = event.temperature;
 
   dht.humidity().getEvent(&event);
-  dht_humidity_sensorValue = event.relative_humidity;
+  dht_humidity_sensor_value = event.relative_humidity;
 }
+
+} // namespace
 
 void setup()
 {
-  myOLED.begin();
+  my_oled.begin();
   dht.begin();
 }
 
 void loop()
 {
   read_data_from_sensor();
-  
-  myOLED.clrScr();
-  myOLED.setFont(SmallFont);
+
+  my_oled.clrScr();
+  my_oled.setFont(SmallFont);
   if (!is_warning)
   {
     draw_warning();
   }
   else
   {
-    myOLED.print(String(millis()), CENTER, 4);
+    my_oled.print(String(millis()), CENTER, 4);
   }
 
-  myOLED.setFont(MediumNumbers);
+  my_oled.print("co: " + String(mq135_co), MARGINE, 16);
+  my_oled.print("co2: " + String(mq135_co2), MARGINE, 24);
+  my_oled.print("ethanol: " + String(mq135_ethanol), MARGINE, 32);
+  my_oled.print("NH4: " + String(mq135_nh4), MARGINE, 40);
+  my_oled.print("toluene: " + String(mq135_toluene), MARGINE, 48);
+  my_oled.print("acetone: " + String(mq135_acetone), MARGINE, 56);
 
-  myOLED.printNumI(mq135_sensorValue, MARGINE, FIRST_LINE + MARGINE,2,'0');
-  myOLED.printNumI(dht_temperature_sensorValue, SCREEN_HALF_WIDTH + MARGINE, FIRST_LINE + MARGINE,2,'0');
-  myOLED.printNumI(hds10_sensorValue, MARGINE, SECOND_LINE + MARGINE,2,'0');
-  myOLED.printNumI(dht_humidity_sensorValue, SCREEN_HALF_WIDTH + MARGINE, SECOND_LINE + MARGINE,2,'0');
+  my_oled.print("t: " + String(dht_temperature_sensor_value), RIGHT, 16);
+  my_oled.print("h: " + String(dht_humidity_sensor_value), RIGHT, 24);
+  my_oled.print("hds: " + String(hds10_sensor_value), RIGHT, 32);
 
-  draw_borders();
-
-  myOLED.update();
+  my_oled.drawLine(SCREEN_HALF_WIDTH + 24, SCREEN_YELOW_HEIGHT, SCREEN_HALF_WIDTH + 24, SCREEN_HEIGHT);
+  
+  my_oled.update();
   delay (1000);
 }
