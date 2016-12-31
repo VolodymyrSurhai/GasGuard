@@ -4,7 +4,6 @@
 #include <OLED_I2C.h>
 #include <MQ135.h>
 
-extern uint8_t MediumNumbers[];
 extern uint8_t SmallFont[];
 
 namespace {
