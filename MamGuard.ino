@@ -2,6 +2,7 @@
 #include <DHT.h>
 #include <DHT_U.h>
 #include <OLED_I2C.h>
+#include <MQ135.h>
 
 const uint8_t HDS10_PIN = A2;
 const uint8_t MQ135_PIN = A3;
@@ -29,6 +30,7 @@ const uint8_t SECOND_LINE = 40;
 
 OLED  myOLED(SCREEN_SDA_PIN, SCREEN_SCL_PIN);
 DHT_Unified dht(DHT_PIN, DHT_TYPE);
+MQ135 mq135(MQ135_PIN);
 
 bool is_warning = false;
 uint32_t mq135_sensorValue = 0;
@@ -95,10 +97,10 @@ void loop()
 
   myOLED.setFont(MediumNumbers);
 
-  myOLED.printNumI(mq135_sensorValue, MARGINE, FIRST_LINE + MARGINE,3,'0');
-  myOLED.printNumI(dht_temperature_sensorValue, SCREEN_HALF_WIDTH + MARGINE, FIRST_LINE + MARGINE,3,'0');
-  myOLED.printNumI(hds10_sensorValue, MARGINE, SECOND_LINE + MARGINE,3,'0');
-  myOLED.printNumI(dht_humidity_sensorValue, SCREEN_HALF_WIDTH + MARGINE, SECOND_LINE + MARGINE,3,'0');
+  myOLED.printNumI(mq135_sensorValue, MARGINE, FIRST_LINE + MARGINE,2,'0');
+  myOLED.printNumI(dht_temperature_sensorValue, SCREEN_HALF_WIDTH + MARGINE, FIRST_LINE + MARGINE,2,'0');
+  myOLED.printNumI(hds10_sensorValue, MARGINE, SECOND_LINE + MARGINE,2,'0');
+  myOLED.printNumI(dht_humidity_sensorValue, SCREEN_HALF_WIDTH + MARGINE, SECOND_LINE + MARGINE,2,'0');
 
   draw_borders();
 
